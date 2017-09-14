@@ -5,8 +5,8 @@ A bare bones [IPFS](https://ipfs.io) installer for the Raspberry Pi.
 
 ### Installation
 
-Log in to your Raspberry Pi as the default user (`pi`). From any local directory, 
-clone or download this repo, `cd` into it and run the installer:
+Log in to your Raspberry Pi with an administrator account (you can use the default `pi` user for this). From any local
+directory, clone or download this repo, `cd` into it and run the installer:
 
 ```SHELL
 $ ./install
@@ -14,11 +14,17 @@ $ ./install
 
 **Notes**
 
-* Make sure your SD card's size is 16 GB or more
-* You need to be logged in as `pi` in order to correctly run the installer. Also, 
-  the `pi` user needs root privileges to run the installer (it does by default)
-* The IPFS user directory will be created at `/home/pi/.ipfs`
-* Go's version will default to 1.6.3 (latest version as of this writing)
+* Don't execute the installation script with `sudo`
+* You'll need root privileges to run the installer (the `pi` user does so by default)
+* The IPFS user directory will be created at `~/.ipfs` (eg.: `/home/pi/.ipfs`)
+* Go's version will default to 1.9 (latest version as of this writing)
+* If you are not logged in as the default user (`pi`), adjust `ipfs-daemon.service` accordingly. Assuming you're logged
+in as `janedoe`, you'll want to update the following two lines:
+
+```INI
+User=janedoe
+Environment=IPFS_PATH=/home/janedoe/.ipfs
+```
 
 ### Tested on:
 
@@ -26,18 +32,16 @@ $ ./install
 
 - [ ] RPi 0
 - [x] RPi 1
-- [ ] RPi 2
-- [ ] RPi 3
+- [x] RPi 2
+- [x] RPi 3
 
-**SD card size**:
+**Operating system**:
 
-- [ ] 8 GB
-- [ ] 16 GB
-- [ ] 32 GB
-- [x] 64 GB
+- [ ] Noobs
+- [x] Raspbian
 
 ### How to contribute
 
-For bug reports, open a new issue. For code patches, open a pull request against 
-the `development` branch.
+All contributions are welcome. For bug reports, open a new issue. For code patches, open a pull request against the
+`development` branch.
 

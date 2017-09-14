@@ -9,7 +9,7 @@ After=network.target
 Type=simple
 User=pi
 Environment=IPFS_PATH=/home/pi/.ipfs
-ExecStart=/home/pi/go/bin/ipfs daemon
+ExecStart=/usr/local/bin/ipfs daemon
 ExecStop=/usr/bin/pkill -f ipfs
 Restart=on-failure
 RestartSec=10s
