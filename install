@@ -5,14 +5,14 @@ set -o pipefail
 
 if [ -x "$(command -v ipfs)" ]; then
     echo "IPFS already installed"
-    exit 0
+    exit 1
 fi
 
 RPI_REVISION=`sed -rn 's/Revision\s+\:\s+([0-9a-z_\-\s\,\(\)]+)/\1/p' /proc/cpuinfo`
 
 if [[ $RPI_REVISION == *"900092"* ]]; then
     echo ">>> This Raspberry Pi model (zero) hasn't been tested yet"
-    exit 0
+    exit 1
 elif [[ $RPI_REVISION == *"00"* ]]; then
     echo ">>> Starting installation on Raspberry Pi 1..."
 elif [[ $RPI_REVISION == *"a01041"* || $RPI_REVISION == *"a21041"* ]]; then
@@ -47,7 +47,7 @@ else
         IFS='.' read -r -a CURRENT_GO_VERSION_ARRAY <<< $CURRENT_GO_VERSION
         if [ "${CURRENT_GO_VERSION_ARRAY[0]}""${CURRENT_GO_VERSION_ARRAY[1]}" -lt "18" ]; then
             echo ">>> Current Go version is incompatible with IPFS. Please uninstall Go and run this script again."
-            exit 0
+            exit 1
         fi
     fi
 fi
@@ -91,7 +91,14 @@ IPFS_EXEC=$GOPATH/bin/ipfs
 $IPFS_EXEC init
 
 # Install and enable bring-up configurations for IPFS daemon
-sudo cp ipfs-daemon.service /etc/systemd/system/ipfs-daemon.service
+ipfs_daemon_service_config=$(ipfs_user=$(whoami) ipfs_user_dir=$HOME envsubst < templates/ipfs-daemon.service.tpl)
+
+if [ -z "$ipfs_daemon_service_config" ]; then
+  echo "Service config file could not be parsed"
+  exit 1
+fi
+
+sudo bash -c "echo \"$ipfs_daemon_service_config\" > /etc/systemd/system/ipfs-daemon.service"
 sudo systemctl enable ipfs-daemon.service
 
 # Start IPFS daemon
