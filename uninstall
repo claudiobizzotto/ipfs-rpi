@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+
+set -o errexit
+set -o pipefail
+
+#
+while getopts ":y" opt; do
+  case ${opt} in
+    y) yes_to_all=true;;
+  esac
+done
+
+#
+if [ ! -x "$(command -v ipfs)" ]; then
+  echo "IPFS is not installed. Nothing to be done..."
+  exit 0
+fi
+
+#
+if [ -z $yes_to_all ]; then
+  read -p "Uninstall IPFS? [Y/n] " proceed
+
+  case $proceed in
+    [Yy]* ) ;;
+    * ) exit 0;;
+  esac
+fi
+
+#
+echo "Uninstalling IPFS..."
+
+sudo service ipfs-daemon.service stop
+if [ $? -ne 0 ]; then
+  echo "Failed to stop IPFS"
+  exit $?
+fi
+
+sudo rm -rf /usr/local/bin/ipfs
+sudo rm /etc/systemd/system/ipfs-daemon.service
+
+#
+ipfs_dir=~/.ipfs
+
+if [ -d $ipfs_dir ]; then
+  $remove_ipfs_dir=true
+
+  if [ -z $yes_to_all ]; then
+    read -p "Uninstall IPFS directory ($ipfs_dir)? This will remove all your local IPFS files. [Y/n] " proceed
+
+    case $proceed in
+      [Yy]* ) ;;
+      * ) remove_ipfs_dir=false;;
+    esac
+  fi
+
+  if [ $remove_ipfs_dir == true ]; then
+    echo "Removing IPFS directory ($ipfs_dir)..."
+    rm -rf $ipfs_dir
+  fi
+fi
+
+#
+if [ ! -x "$(command -v go)" ]; then
+  $uninstall_go=true
+
+  if [ -z $yes_to_all ]; then
+    read -p "Uninstall Go? [Y/n] " proceed
+
+    case $proceed in
+      [Yy]* ) ;;
+      * ) uninstall_go=false;;
+    esac
+  fi
+
+  if [ $uninstall_go == true ]; then
+    echo "Uninstalling Go..."
+    sudo rm -rf /usr/local/go
+    sudo rm /etc/profile.d/golang.sh
+
+    gopath=$HOME/go
+    sed -i "/export GOPATH=$gopath/d" $HOME/.bashrc
+    sed -i "/export PATH=${PATH}:${gopath}\/bin/d" $HOME/.bashrc
+  fi
+fi
+
+#
+echo -e "\n>>> All done. To remove the remaining dependencies, you can run \"sudo apt-get purge node git\""
+
