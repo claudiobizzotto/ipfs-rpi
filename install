@@ -3,92 +3,98 @@
 set -o errexit
 set -o pipefail
 
+#
 if [ -x "$(command -v ipfs)" ]; then
-    echo "IPFS already installed"
-    exit 1
+  echo "IPFS already installed"
+  exit 1
 fi
 
-RPI_REVISION=`sed -rn 's/Revision\s+\:\s+([0-9a-z_\-\s\,\(\)]+)/\1/p' /proc/cpuinfo`
+#
+rpi_revision=`sed -rn 's/Revision\s+\:\s+([0-9a-z_\-\s\,\(\)]+)/\1/p' /proc/cpuinfo`
 
-if [[ $RPI_REVISION == *"900092"* ]]; then
-    echo ">>> This Raspberry Pi model (zero) hasn't been tested yet"
-    exit 1
-elif [[ $RPI_REVISION == *"00"* ]]; then
-    echo ">>> Starting installation on Raspberry Pi 1..."
-elif [[ $RPI_REVISION == *"a01041"* || $RPI_REVISION == *"a21041"* ]]; then
-    echo ">>> Starting installation on Raspberry Pi 2..."
-elif [[ $RPI_REVISION == *"a02082"* || $RPI_REVISION = *"a22082"* ]]; then
-    echo -e ">>> Starting installation on Raspberry Pi 3...\n"
+if [[ $rpi_revision == *"900092"* ]]; then
+  echo ">>> This Raspberry Pi model (zero) hasn't been tested yet"
+  exit 1
+elif [[ $rpi_revision == *"00"* ]]; then
+  echo ">>> Starting installation on Raspberry Pi 1..."
+elif [[ $rpi_revision == *"a01041"* || $rpi_revision == *"a21041"* ]]; then
+  echo ">>> Starting installation on Raspberry Pi 2..."
+elif [[ $rpi_revision == *"a02082"* || $rpi_revision = *"a22082"* ]]; then
+  echo -e ">>> Starting installation on Raspberry Pi 3...\n"
 else
-    echo ">>> Unknown Raspberry Pi model"
-    exit 1
+  echo ">>> Unknown Raspberry Pi model"
+  exit 1
 fi
 
+#
 sudo apt-get update
 sudo apt-get -y install \
-    nodejs \
-    git
+  nodejs \
+  git
 
 # Maybe install Go from source (IPFS requires Go 1.8+)
-GOROOT_PARENT=/usr/local
-if [ ! -x "$(command -v go)" ]; then
-    GO_VERSION=1.9
-    echo ">>> Installing Go $GO_VERSION"
-    GO_PKG="go$GO_VERSION.linux-armv6l.tar.gz"
-    if [ ! -f $GO_PKG ]; then
-        wget "https://storage.googleapis.com/golang/$GO_PKG"
-    fi
+goroot_parent=/usr/local
 
-    sudo tar -xzf $GO_PKG -C $GOROOT_PARENT
+if [ ! -x "$(command -v go)" ]; then
+  go_version=1.9
+  echo ">>> Installing Go $go_version"
+
+  go_pkg="go$go_version.linux-armv6l.tar.gz"
+  if [ ! -f $go_pkg ]; then
+    wget "https://storage.googleapis.com/golang/$go_pkg"
+  fi
+  sudo tar -xzf $go_pkg -C $goroot_parent
 else
-    CURRENT_GO_VERSION="$(go version 2>/dev/null | sed -n 's/^go version go\([^ ]*\) .*$/\1/p')"
-    echo ">>> Go alredy installed. Version: $CURRENT_GO_VERSION"
-    if [[ -n "$CURRENT_GO_VERSION" ]]; then
-        IFS='.' read -r -a CURRENT_GO_VERSION_ARRAY <<< $CURRENT_GO_VERSION
-        if [ "${CURRENT_GO_VERSION_ARRAY[0]}""${CURRENT_GO_VERSION_ARRAY[1]}" -lt "18" ]; then
-            echo ">>> Current Go version is incompatible with IPFS. Please uninstall Go and run this script again."
-            exit 1
-        fi
+  current_go_version="$(go version 2>/dev/null | sed -n 's/^go version go\([^ ]*\) .*$/\1/p')"
+  echo ">>> Go alredy installed. Version: $current_go_version"
+
+  if [[ -n "$current_go_version" ]]; then
+    IFS='.' read -r -a current_go_version_array <<< $current_go_version
+    if [ "${current_go_version_array[0]}""${current_go_version_array[1]}" -lt "18" ]; then
+      echo ">>> Current Go version is incompatible with IPFS. Please uninstall Go and run this script again."
+      exit 1
     fi
+  fi
 fi
 
 # Set up Go environment
-GOROOT=$GOROOT_PARENT/go
-GO_PROFILE_PATH=/etc/profile.d/golang.sh
+goroot=$goroot_parent/go
+go_profile_path=/etc/profile.d/golang.sh
 
-sudo tee $GO_PROFILE_PATH <<EOF
-export GOROOT=$GOROOT
-export PATH=\$PATH:\$GOROOT/bin
+sudo tee $go_profile_path <<EOF
+export GOROOT=$goroot
+export PATH=\$PATH:\$goroot/bin
 EOF
 
-. $GO_PROFILE_PATH
-sudo chgrp -R staff $GOROOT
+. $go_profile_path
+sudo chgrp -R staff $goroot
 
-export GOPATH=$HOME/go
-if [ ! -d "$GOPATH" ]; then
-    mkdir $GOPATH
-    echo ">>> GOPATH created at $GOPATH"
+gopath=$HOME/go
+if [ ! -d "$gopath" ]; then
+  mkdir $gopath
+  echo ">>> Go path created at $gopath"
 else
-    echo ">>> GOPATH = $GOPATH"
+  echo ">>> Go path = $gopath"
 fi
 
-if ! grep --quiet "\$GOPATH" $HOME/.bashrc; then
-    echo -e "\nexport GOPATH=$GOPATH" >> $HOME/.bashrc
-    echo -e "export PATH=\$PATH:\$GOPATH/bin" >> $HOME/.bashrc
+if ! grep --quiet "\$gopath" $HOME/.bashrc; then
+  echo -e "\nexport GOPATH=$gopath" >> $HOME/.bashrc
+  echo -e "export PATH=\$PATH:\$gopath/bin" >> $HOME/.bashrc
 fi
 
 # Install IPFS
 echo ">>> Installing IPFS"
-GO_EXEC=$GOROOT/bin/go
-$GO_EXEC get -u -d github.com/ipfs/go-ipfs
-cd $GOPATH/src/github.com/ipfs/go-ipfs
+
+go_exec=$goroot/bin/go
+$go_exec get -u -d github.com/ipfs/go-ipfs
+cd $gopath/src/github.com/ipfs/go-ipfs
 make install
 cd -
 sudo cp ~/go/bin/ipfs /usr/local/bin/ipfs
 
 # Initialize IPFS
-IPFS_EXEC=$GOPATH/bin/ipfs
-$IPFS_EXEC init
+ipfs_exec=$gopath/bin/ipfs
+$ipfs_exec init
 
 # Install and enable bring-up configurations for IPFS daemon
 ipfs_daemon_service_config=$(ipfs_user=$(whoami) ipfs_user_dir=$HOME envsubst < templates/ipfs-daemon.service.tpl)
