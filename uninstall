@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
 
-set -o errexit
 set -o pipefail
 
 #
 while getopts ":y" opt; do
   case ${opt} in
-    y) yes_to_all=true;;
+    y) assume_yes=true;;
   esac
 done
 
@@ -17,7 +16,7 @@ if [ ! -x "$(command -v ipfs)" ]; then
 fi
 
 #
-if [ -z $yes_to_all ]; then
+if [ -z $assume_yes ]; then
   read -p "Uninstall IPFS? [Y/n] " proceed
 
   case $proceed in
@@ -29,22 +28,29 @@ fi
 #
 echo "Uninstalling IPFS..."
 
-sudo service ipfs-daemon.service stop
-if [ $? -ne 0 ]; then
-  echo "Failed to stop IPFS"
-  exit $?
+sudo service ipfs-daemon status
+if [ $? -eq 0 ]; then
+  echo "Stopping IPFS service..."
+  sudo service ipfs-daemon stop
+  if [ $? -ne 0 ]; then
+    echo "Failed to stop IPFS"
+    exit $?
+  fi
+
+  sudo systemctl disable ipfs-daemon
 fi
 
 sudo rm -rf /usr/local/bin/ipfs
 sudo rm /etc/systemd/system/ipfs-daemon.service
+rm -rf ~/go/bin/ipfs
 
 #
 ipfs_dir=~/.ipfs
 
 if [ -d $ipfs_dir ]; then
-  $remove_ipfs_dir=true
+  remove_ipfs_dir=true
 
-  if [ -z $yes_to_all ]; then
+  if [ -z $assume_yes ]; then
     read -p "Uninstall IPFS directory ($ipfs_dir)? This will remove all your local IPFS files. [Y/n] " proceed
 
     case $proceed in
@@ -60,10 +66,10 @@ if [ -d $ipfs_dir ]; then
 fi
 
 #
-if [ ! -x "$(command -v go)" ]; then
-  $uninstall_go=true
+if [ -x "$(command -v go)" ]; then
+  uninstall_go=true
 
-  if [ -z $yes_to_all ]; then
+  if [ -z $assume_yes ]; then
     read -p "Uninstall Go? [Y/n] " proceed
 
     case $proceed in
@@ -74,15 +80,31 @@ if [ ! -x "$(command -v go)" ]; then
 
   if [ $uninstall_go == true ]; then
     echo "Uninstalling Go..."
+
     sudo rm -rf /usr/local/go
     sudo rm /etc/profile.d/golang.sh
 
     gopath=$HOME/go
-    sed -i "/export GOPATH=$gopath/d" $HOME/.bashrc
-    sed -i "/export PATH=${PATH}:${gopath}\/bin/d" $HOME/.bashrc
+    sed -i '\|export GOPATH='$gopath'|d' $HOME/.bashrc
+    sed -i '\|export PATH=$PATH:$GOPATH/bin|d' $HOME/.bashrc
+
+    rm -rf $HOME/go
   fi
 fi
 
+go_bin=/usr/local/go/bin
+path=$(echo $PATH | sed -e 's|:'$go_bin'||')
+
 #
-echo -e "\n>>> All done. To remove the remaining dependencies, you can run \"sudo apt-get purge node git\""
+echo -e "\n>>> All done.
+
+Please, update this session's PATH with the following command:
+
+  export PATH=$path
+
+[OPTIONAL] To remove the remaining dependencies, you may run
+
+  sudo apt-get purge node git
+
+"
 
