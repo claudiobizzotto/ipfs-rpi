@@ -18,11 +18,7 @@ fi
 #
 if [ -z $assume_yes ]; then
   read -p "Uninstall IPFS? [Y/n] " proceed
-
-  case $proceed in
-    [Yy]* ) ;;
-    * ) exit 0;;
-  esac
+  [ ! "${proceed,,}" == "y" ] && exit 0
 fi
 
 #
@@ -52,11 +48,7 @@ if [ -d $ipfs_dir ]; then
 
   if [ -z $assume_yes ]; then
     read -p "Uninstall IPFS directory ($ipfs_dir)? This will remove all your local IPFS files. [Y/n] " proceed
-
-    case $proceed in
-      [Yy]* ) ;;
-      * ) remove_ipfs_dir=false;;
-    esac
+    [ ! "${proceed,,}" == "y" ] && remove_ipfs_dir=false
   fi
 
   if [ $remove_ipfs_dir == true ]; then
@@ -71,11 +63,7 @@ if [ -x "$(command -v go)" ]; then
 
   if [ -z $assume_yes ]; then
     read -p "Uninstall Go? [Y/n] " proceed
-
-    case $proceed in
-      [Yy]* ) ;;
-      * ) uninstall_go=false;;
-    esac
+    [ ! "${proceed,,}" == "y" ] && uninstall_go=false
   fi
 
   if [ $uninstall_go == true ]; then
@@ -98,7 +86,7 @@ path=$(echo $PATH | sed -e 's|:'$go_bin'||')
 #
 echo -e "\n>>> All done.
 
-Please, update this session's PATH with the following command:
+Please, update your session's PATH with the following command:
 
   export PATH=$path
 

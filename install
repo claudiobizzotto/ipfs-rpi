@@ -63,10 +63,9 @@ go_profile_path=/etc/profile.d/golang.sh
 
 sudo tee $go_profile_path <<EOF
 export GOROOT=$goroot
-export PATH=\$PATH:\$goroot/bin
+export PATH=\$PATH:\$GOROOT/bin
 EOF
 
-. $go_profile_path
 sudo chgrp -R staff $goroot
 
 gopath=$HOME/go
@@ -77,9 +76,8 @@ else
   echo ">>> Go path = $gopath"
 fi
 
-if ! grep --quiet "\$gopath" $HOME/.bashrc; then
+if ! grep --quiet "$gopath" $HOME/.bashrc; then
   echo -e "\nexport GOPATH=$gopath" >> $HOME/.bashrc
-  echo -e "export PATH=\$PATH:\$gopath/bin" >> $HOME/.bashrc
 fi
 
 # Install IPFS
@@ -93,8 +91,7 @@ cd -
 sudo cp ~/go/bin/ipfs /usr/local/bin/ipfs
 
 # Initialize IPFS
-ipfs_exec=$gopath/bin/ipfs
-$ipfs_exec init
+/usr/local/bin/ipfs init
 
 # Install and enable bring-up configurations for IPFS daemon
 ipfs_daemon_service_config=$(ipfs_user=$(whoami) ipfs_user_dir=$HOME envsubst < templates/ipfs-daemon.service.tpl)
@@ -110,5 +107,12 @@ sudo systemctl enable ipfs-daemon.service
 # Start IPFS daemon
 sudo systemctl start ipfs-daemon.service
 
-echo -e "\n>>> All done"
+#
+echo -e "\n>>> All done.
+
+Please, update this session's enviroment with the following commands:
+
+  . $go_profile_path
+  . $HOME/.bashrc
+"
 
