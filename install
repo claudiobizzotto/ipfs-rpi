@@ -76,16 +76,17 @@ else
   echo ">>> Go path = $gopath"
 fi
 
-if ! grep --quiet "$gopath" $HOME/.bashrc; then
-  echo -e "\nexport GOPATH=$gopath" >> $HOME/.bashrc
+if ! grep --quiet "$gopath" $HOME/.profile; then
+  echo -e "\nexport GOPATH=$gopath" >> $HOME/.profile
 fi
 
 # Install IPFS
-echo ">>> Installing IPFS"
+IPFS_VERSION="v0.4.13"
+echo ">>> Installing IPFS version $IPFS_VERSION"
 
-go_exec=$goroot/bin/go
-$go_exec get -u -d github.com/ipfs/go-ipfs
+$goroot/bin/go get -u -d github.com/ipfs/go-ipfs
 cd $gopath/src/github.com/ipfs/go-ipfs
+git checkout $IPFS_VERSION
 make install
 cd -
 sudo cp ~/go/bin/ipfs /usr/local/bin/ipfs
@@ -109,10 +110,4 @@ sudo systemctl start ipfs-daemon.service
 
 #
 echo -e "\n>>> All done.
-
-Please, update this session's enviroment with the following commands:
-
-  . $go_profile_path
-  . $HOME/.bashrc
-"
 
