@@ -35,27 +35,40 @@ if [ ! -f $tar_gz_destination ]; then
   exit 1
 fi
 
+ipfs_destination=/usr/local/bin/ipfs
 sudo tar xzvf $tar_gz_destination -C /tmp
-sudo mv /tmp/go-ipfs/ipfs /usr/local/bin/ipfs
-sudo chgrp staff /usr/local/bin/ipfs
+sudo cp /tmp/go-ipfs/ipfs $ipfs_destination
+sudo chown root:staff $ipfs_destination
+sudo chmod 755 $ipfs_destination
 
 # Maybe initialize IPFS
 [ ! -d ~/.ipfs ] && ipfs init
 
 # Maybe install and enable bring-up configurations for IPFS daemon
-if [ ! -f /etc/systemd/system/ipfs-daemon.service ]; then
-  ipfs_daemon_service_config=$(ipfs_user_dir=$HOME envsubst < ipfs-daemon.service.tpl)
+if [ ! -f /lib/systemd/system/ipfs-daemon.service ]; then
+  cat << EOF | sudo tee /lib/systemd/system/ipfs-daemon.service
+[Unit]
+Description=IPFS daemon
+Wants=network.target
+After=network.target
 
-  if [ -z "$ipfs_daemon_service_config" ]; then
-    echo "Service config file could not be parsed"
-    exit 1
-  fi
+[Service]
+Type=simple
+Environment=IPFS_PATH=$HOME/.ipfs
+ExecStart=/usr/local/bin/ipfs daemon
+ExecStop=/usr/bin/pkill -f ipfs
+Restart=on-failure
+RestartSec=10s
 
-  sudo bash -c "echo \"$ipfs_daemon_service_config\" > /etc/systemd/system/ipfs-daemon.service"
-  sudo systemctl enable ipfs-daemon.service
+[Install]
+WantedBy=multi-user.target
+EOF
+
 fi
 
 # Start IPFS daemon
+sudo systemctl daemon-reload
+sudo systemctl enable ipfs-daemon
 sudo systemctl start ipfs-daemon.service
 
 #
