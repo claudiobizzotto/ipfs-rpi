@@ -22,14 +22,17 @@ fi
 echo ">>> Starting installation on $arm_type"
 
 # Download and install IPFS
+ipfs_arch=${2-"linux-arm"}
 ipfs_version=${1-"v0.4.13"}
 echo ">>> Installing IPFS version $ipfs_version"
 
-tar_gz_destination=/tmp/go-ipfs_${ipfs_version}_linux-arm.tar.gz
-[ ! -f $tar_gz_destination ] && sudo wget "https://dist.ipfs.io/go-ipfs/${ipfs_version}/go-ipfs_${ipfs_version}_linux-arm.tar.gz" -O $tar_gz_destination
+https://dist.ipfs.io/go-ipfs/v0.4.13/go-ipfs_v0.4.13_linux-amd64.tar.gz
+
+tar_gz_destination=/tmp/go-ipfs_${ipfs_version}_${ipfs_arch}.tar.gz
+[ ! -f $tar_gz_destination ] && sudo wget "https://dist.ipfs.io/go-ipfs/${ipfs_version}/go-ipfs_${ipfs_version}_${ipfs_arch}.tar.gz" -O $tar_gz_destination
 
 if [ ! -f $tar_gz_destination ]; then
-  echo ">>> Failed to download IPFS version"
+  echo ">>> Failed to download IPFS"
   exit 1
 fi
 
