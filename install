@@ -1,113 +1,61 @@
 #!/usr/bin/env bash
 
-set -o errexit
 set -o pipefail
 
 #
-if [ -x "$(command -v ipfs)" ]; then
-  echo "IPFS already installed"
-  exit 1
-fi
+[ -x "$(command -v ipfs)" ] && echo ">>> IPFS already installed. Use the uninstall script to remove it" && exit 0
 
 #
+arm_type="unknown ARM system"
 rpi_revision=`sed -rn 's/Revision\s+\:\s+([0-9a-z_\-\s\,\(\)]+)/\1/p' /proc/cpuinfo`
 
 if [[ $rpi_revision == *"900092"* ]]; then
-  echo ">>> This Raspberry Pi model (zero) hasn't been tested yet"
-  exit 1
+  arm_type="Raspberry Pi model zero"
 elif [[ $rpi_revision == *"00"* ]]; then
-  echo ">>> Starting installation on Raspberry Pi 1..."
+  arm_type="Raspberry Pi 1"
 elif [[ $rpi_revision == *"a01041"* || $rpi_revision == *"a21041"* ]]; then
-  echo ">>> Starting installation on Raspberry Pi 2..."
+  arm_type="Raspberry Pi 2"
 elif [[ $rpi_revision == *"a02082"* || $rpi_revision = *"a22082"* ]]; then
-  echo -e ">>> Starting installation on Raspberry Pi 3...\n"
-else
-  echo ">>> Unknown Raspberry Pi model"
+  arm_type="Raspberry Pi 3"
+fi
+
+echo ">>> Starting installation on $arm_type"
+
+# Download and install IPFS
+ipfs_version=${1-"v0.4.13"}
+echo ">>> Installing IPFS version $ipfs_version"
+
+tar_gz_destination=/tmp/go-ipfs_${ipfs_version}_linux-arm.tar.gz
+[ ! -f $tar_gz_destination ] && sudo wget "https://dist.ipfs.io/go-ipfs/${ipfs_version}/go-ipfs_${ipfs_version}_linux-arm.tar.gz" -O $tar_gz_destination
+
+if [ ! -f $tar_gz_destination ]; then
+  echo ">>> Failed to download IPFS version"
   exit 1
 fi
 
-#
-sudo apt-get update
-sudo apt-get -y install \
-  nodejs \
-  git
+sudo tar xzvf $tar_gz_destination -C /tmp
+sudo mv /tmp/go-ipfs/ipfs /usr/local/bin/ipfs
+sudo chgrp staff /usr/local/bin/ipfs
 
-# Maybe install Go from source (IPFS requires Go 1.8+)
-goroot_parent=/usr/local
+# Maybe initialize IPFS
+[ ! -d ~/.ipfs ] && ipfs init
 
-if [ ! -x "$(command -v go)" ]; then
-  go_version=1.9
-  echo ">>> Installing Go $go_version"
+# Maybe install and enable bring-up configurations for IPFS daemon
+if [ ! -f /etc/systemd/system/ipfs-daemon.service ]; then
+  ipfs_daemon_service_config=$(ipfs_user_dir=$HOME envsubst < ipfs-daemon.service.tpl)
 
-  go_pkg="go$go_version.linux-armv6l.tar.gz"
-  if [ ! -f $go_pkg ]; then
-    wget "https://storage.googleapis.com/golang/$go_pkg"
+  if [ -z "$ipfs_daemon_service_config" ]; then
+    echo "Service config file could not be parsed"
+    exit 1
   fi
-  sudo tar -xzf $go_pkg -C $goroot_parent
-else
-  current_go_version="$(go version 2>/dev/null | sed -n 's/^go version go\([^ ]*\) .*$/\1/p')"
-  echo ">>> Go alredy installed. Version: $current_go_version"
 
-  if [[ -n "$current_go_version" ]]; then
-    IFS='.' read -r -a current_go_version_array <<< $current_go_version
-    if [ "${current_go_version_array[0]}""${current_go_version_array[1]}" -lt "18" ]; then
-      echo ">>> Current Go version is incompatible with IPFS. Please uninstall Go and run this script again."
-      exit 1
-    fi
-  fi
+  sudo bash -c "echo \"$ipfs_daemon_service_config\" > /etc/systemd/system/ipfs-daemon.service"
+  sudo systemctl enable ipfs-daemon.service
 fi
-
-# Set up Go environment
-goroot=$goroot_parent/go
-go_profile_path=/etc/profile.d/golang.sh
-
-sudo tee $go_profile_path <<EOF
-export GOROOT=$goroot
-export PATH=\$PATH:\$GOROOT/bin
-EOF
-
-sudo chgrp -R staff $goroot
-
-gopath=$HOME/go
-if [ ! -d "$gopath" ]; then
-  mkdir $gopath
-  echo ">>> Go path created at $gopath"
-else
-  echo ">>> Go path = $gopath"
-fi
-
-if ! grep --quiet "$gopath" $HOME/.profile; then
-  echo -e "\nexport GOPATH=$gopath" >> $HOME/.profile
-fi
-
-# Install IPFS
-IPFS_VERSION="v0.4.13"
-echo ">>> Installing IPFS version $IPFS_VERSION"
-
-$goroot/bin/go get -u -d github.com/ipfs/go-ipfs
-cd $gopath/src/github.com/ipfs/go-ipfs
-git checkout $IPFS_VERSION
-make install
-cd -
-sudo cp ~/go/bin/ipfs /usr/local/bin/ipfs
-
-# Initialize IPFS
-/usr/local/bin/ipfs init
-
-# Install and enable bring-up configurations for IPFS daemon
-ipfs_daemon_service_config=$(ipfs_user=$(whoami) ipfs_user_dir=$HOME envsubst < templates/ipfs-daemon.service.tpl)
-
-if [ -z "$ipfs_daemon_service_config" ]; then
-  echo "Service config file could not be parsed"
-  exit 1
-fi
-
-sudo bash -c "echo \"$ipfs_daemon_service_config\" > /etc/systemd/system/ipfs-daemon.service"
-sudo systemctl enable ipfs-daemon.service
 
 # Start IPFS daemon
 sudo systemctl start ipfs-daemon.service
 
 #
-echo -e "\n>>> All done.
+echo ">>> All done."
 

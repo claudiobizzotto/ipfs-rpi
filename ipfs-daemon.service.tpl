@@ -5,7 +5,6 @@ After=network.target
 
 [Service]
 Type=simple
-User=${ipfs_user}
 Environment=IPFS_PATH=${ipfs_user_dir}
 ExecStart=/usr/local/bin/ipfs daemon
 ExecStop=/usr/bin/pkill -f ipfs
