@@ -5,8 +5,10 @@ A bare bones [IPFS](https://ipfs.io) installer for the Raspberry Pi and other AR
 
 ## Installation
 
-Log into your Raspberry Pi with an administrator account (you can use the default `pi` user for this). From any local
-directory, clone or download this repo, `cd` into it and run the installer:
+Log into your system with an administrator account, like the default OS user. For example, on the Rapberry Pi, most 
+operating systems will default to the `pi` user, whereas on the Orange Pi that's going to be `orangepi`.
+
+From any local directory, clone or download this repo, `cd` into it and run the installer:
 
 ```SHELL
 $ ./install
@@ -15,8 +17,8 @@ $ ./install
 **Notes**
 
 * Do **not** execute the installation script with `sudo`
-* You'll need root privileges to run the installer (the `pi` user does so by default)
-* The IPFS user directory will be created at `~/.ipfs` (eg.: `/home/pi/.ipfs`)
+* You'll need root privileges to run the installer. The default OS user (`pi`, `orangepi` etc.) does so by default
+* The IPFS user directory will be created at `~/.ipfs` (eg.: `/home/pi/.ipfs`, `/home/orangepi/.ipfs` etc.)
 
 ### Options
 
@@ -42,12 +44,13 @@ $ ./uninstall
 - [x] RPi 1
 - [x] RPi 2
 - [x] RPi 3
-- [ ] Orange Pi
+- [x] Orange Pi
 
 **Operating system**:
 
 - [ ] Noobs
 - [x] Raspbian
+- [x] Ubuntu 14.04
 
 ## How to contribute
 
