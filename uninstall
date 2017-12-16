@@ -2,39 +2,58 @@
 
 set -o pipefail
 
-#
+source ./lib/functions.sh
+
 while getopts ":y" opt; do
   case ${opt} in
     y) assume_yes=true;;
   esac
 done
 
-#
 if [ -z $assume_yes ]; then
   read -p "Uninstall IPFS? [Y/n] " proceed
   [ ! "${proceed,,}" == "y" ] && exit 0
 fi
 
-#
 echo ">>> Uninstalling IPFS"
 
-sudo systemctl status ipfs-daemon.service > /dev/null
-if [ $? -eq 0 ]; then
-  echo "Stopping IPFS service..."
-  sudo systemctl stop ipfs-daemon.service
-  if [ $? -ne 0 ]; then
-    echo "Failed to stop IPFS"
-    exit $?
-  fi
+# Stop IPFS daemon service
+init_system=$(get_init_system)
 
-  sudo systemctl disable ipfs-daemon > /dev/null
+if [ $init_system == "systemd" ]; then
+  sudo systemctl status ipfs-daemon.service 2> /dev/null
+
+  if [ $? -eq 0 ]; then
+    echo ">>> Stopping IPFS service..."
+    sudo systemctl stop ipfs-daemon.service 2> /dev/null
+
+    if [ $? -ne 0 ]; then
+      echo ">>> Failed to stop IPFS"
+      exit $?
+    fi
+
+    sudo systemctl disable ipfs-daemon > /dev/null
+    sudo rm -f /lib/systemd/system/ipfs-daemon.service
+    sudo systemctl daemon-reload
+  fi
+elif [ $init_system == "upstart" ]; then
+  sudo service ipfs-daemon status 2> /dev/null
+
+  if [ $? -eq 0 ]; then
+    echo ">>> Stopping IPFS service..."
+    sudo service ipfs-daemon stop 2> /dev/null
+
+    if [ $? -ne 0 ]; then
+      echo ">>> Failed to stop IPFS"
+      exit $?
+    fi
+
+    sudo rm -f /etc/init/ipfs-daemon.conf
+    sudo initctl reload-configuration
+  fi
 fi
 
 sudo rm -rf /usr/local/bin/ipfs
-sudo rm -f /lib/systemd/system/ipfs-daemon.service
-sudo systemctl daemon-reload > /dev/null
-
-#
 ipfs_dir=~/.ipfs
 
 if [ -d $ipfs_dir ]; then
@@ -51,6 +70,5 @@ if [ -d $ipfs_dir ]; then
   fi
 fi
 
-#
 echo ">>> All done."
 
