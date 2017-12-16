@@ -2,11 +2,11 @@
 
 set -o pipefail
 
-#
+source ./lib/functions.sh
+
 [ -x "$(command -v ipfs)" ] && echo ">>> IPFS already installed. Use the uninstall script to remove it" && exit 0
 
-#
-arm_type="unknown ARM system"
+arm_type="? (unknown ARM system)"
 rpi_revision=`sed -rn 's/Revision\s+\:\s+([0-9a-z_\-\s\,\(\)]+)/\1/p' /proc/cpuinfo`
 
 if [[ $rpi_revision == *"900092"* ]]; then
@@ -19,7 +19,7 @@ elif [[ $rpi_revision == *"a02082"* || $rpi_revision = *"a22082"* ]]; then
   arm_type="Raspberry Pi 3"
 fi
 
-echo ">>> Starting installation on $arm_type"
+echo ">>> Starting installation on ARM device compatible with $arm_type"
 
 # Download and install IPFS
 ipfs_arch=${2-"linux-arm"}
@@ -44,33 +44,28 @@ sudo chmod 755 $ipfs_destination
 # Maybe initialize IPFS
 [ ! -d ~/.ipfs ] && ipfs init
 
-# Maybe install and enable bring-up configurations for IPFS daemon
-if [ ! -f /lib/systemd/system/ipfs-daemon.service ]; then
-  cat << EOF | sudo tee /lib/systemd/system/ipfs-daemon.service
-[Unit]
-Description=IPFS daemon
-Wants=network.target
-After=network.target
+# Install and enable bring-up configurations for IPFS daemon
+init_system=$(get_init_system)
+ipfs_path=$HOME/.ipfs
 
-[Service]
-Type=simple
-Environment=IPFS_PATH=$HOME/.ipfs
-ExecStart=/usr/local/bin/ipfs daemon
-ExecStop=/usr/bin/pkill -f ipfs
-Restart=on-failure
-RestartSec=10s
+if [ $init_system == "systemd" ]; then
+  cat ./templates/ipfs-daemon.service.tpl | sed \
+    "s|{{ipfs_path}}|${ipfs_path}|g" | \
+  sudo tee /lib/systemd/system/ipfs-daemon.service > /dev/null
 
-[Install]
-WantedBy=multi-user.target
-EOF
+  sudo systemctl daemon-reload
+  sudo systemctl enable ipfs-daemon
+  sudo systemctl start ipfs-daemon.service
+elif [ $init_system == "upstart" ]; then
+  cat ./templates/ipfs-daemon.conf.tpl | sed \
+    "s|{{ipfs_path}}|${ipfs_path}|g" | \
+  sudo tee /etc/init/ipfs-daemon.conf > /dev/null
 
+  sudo initctl reload-configuration
+  sudo service ipfs-daemon start
+else
+  echo ">> Unable to detect init system - you don't seem to be using systemd or upstart. The IPFS daemon will have to be controlled manually."
 fi
 
-# Start IPFS daemon
-sudo systemctl daemon-reload
-sudo systemctl enable ipfs-daemon
-sudo systemctl start ipfs-daemon.service
-
-#
 echo ">>> All done."
 
