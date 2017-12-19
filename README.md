@@ -5,7 +5,7 @@ A bare bones [IPFS](https://ipfs.io) installer for the Raspberry Pi and other AR
 
 ## Installation
 
-Log into your system with an administrator account, like the default OS user. For example, on the Rapberry Pi, most 
+Log into your system with an administrator account, like the default OS user. For example, on the Raspberry Pi, most
 operating systems will default to the `pi` user, whereas on the Orange Pi that's going to be `orangepi`.
 
 From any local directory, clone or download this repo, `cd` into it and run the installer:
@@ -50,7 +50,7 @@ $ ./uninstall
 
 - [ ] Noobs
 - [x] Raspbian
-- [x] Ubuntu 14.04
+- [x] Ubuntu 14.04 (Trusty)
 
 ## How to contribute
 

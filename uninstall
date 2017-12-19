@@ -21,27 +21,27 @@ echo ">>> Uninstalling IPFS"
 init_system=$(get_init_system)
 
 if [ $init_system == "systemd" ]; then
-  sudo systemctl status ipfs-daemon.service 2> /dev/null
+  sudo systemctl status ipfs-daemon.service 2>/dev/null 1>&2
 
   if [ $? -eq 0 ]; then
     echo ">>> Stopping IPFS service..."
-    sudo systemctl stop ipfs-daemon.service 2> /dev/null
+    sudo systemctl stop ipfs-daemon.service 2>/dev/null 1>&2
 
     if [ $? -ne 0 ]; then
       echo ">>> Failed to stop IPFS"
       exit $?
     fi
 
-    sudo systemctl disable ipfs-daemon > /dev/null
+    sudo systemctl disable ipfs-daemon 2>/dev/null 1>&2
     sudo rm -f /lib/systemd/system/ipfs-daemon.service
     sudo systemctl daemon-reload
   fi
 elif [ $init_system == "upstart" ]; then
-  sudo service ipfs-daemon status 2> /dev/null
+  sudo service ipfs-daemon status 2>/dev/null 1>&2
 
   if [ $? -eq 0 ]; then
     echo ">>> Stopping IPFS service..."
-    sudo service ipfs-daemon stop 2> /dev/null
+    sudo service ipfs-daemon stop 2>/dev/null 1>&2
 
     if [ $? -ne 0 ]; then
       echo ">>> Failed to stop IPFS"
