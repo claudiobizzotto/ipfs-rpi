@@ -20,7 +20,7 @@ $ ./install
 * You'll need root privileges to run the installer. The default OS user (`pi`, `orangepi` etc.) does so by default
 * The IPFS user directory will be created at `~/.ipfs` (eg.: `/home/pi/.ipfs`, `/home/orangepi/.ipfs` etc.)
 
-### Options
+### Installation options
 
 You can specify a version for IPFS (eg.: `v0.4.11`):
 
@@ -28,7 +28,40 @@ You can specify a version for IPFS (eg.: `v0.4.11`):
 $ ./install v0.4.11
 ```
 
-## Uninstalling
+## IPFS usage
+
+You can find a lot of information on how to use IPFS on the [official website](https://ipfs.io/docs/getting-started/).
+If you just want to test whether the installation was successful or not, you can start by _checking out_ an IPFS object:
+
+```SHELL
+$ ipfs cat /ipfs/QmRoyYykmw7XUsifRqkR7v6ezKuqhmvoQuukPGR1aQKRZh
+```
+
+To confirm that your node is connected to the IPFS swarm (aka is online), you can list your node's peers:
+
+```SHELL
+$ ipfs swarm peers
+```
+
+## IPFS daemon
+
+The IPFS daemon needs to be running in order for your IPFS node to appear online. The installer already takes care of
+running the daemon on system startup by default, but if you want to control that process manually, you can use the
+operating system's init system directly.
+
+For `systemd` (Raspbian Stretch, Ubuntu 15.04 and newer, CentOS 7 and newer), you can use:
+
+```SHELL
+$ sudo systemctl {start|status|stop} ipfs-daemon.service
+```
+
+For `upstart` (Ubuntu 9.10 to Ubuntu 14.10, Centos 6), you can use:
+
+```SHELL
+$ sudo service ipfs-daemon {start|status|stop}
+```
+
+## Uninstallation
 
 In order to uninstall IPFS, just execute the uninstaller and follow the uninstallation steps:
 
@@ -36,24 +69,19 @@ In order to uninstall IPFS, just execute the uninstaller and follow the uninstal
 $ ./uninstall
 ```
 
-## Tested on:
+## Support matrix
 
-**ARM Device**:
-
-- [ ] RPi 0
-- [x] RPi 1
-- [x] RPi 2
-- [x] RPi 3
-- [x] Orange Pi
-
-**Operating system**:
-
-- [ ] Noobs
-- [x] Raspbian
-- [x] Ubuntu 14.04 (Trusty)
+| SBC/ARM device    | Raspbian Stretch  | Ubuntu 14.04  |
+| :---------------- | :---------------- | :------------ |
+| Raspberry Pi 0    | Not tested        | Not tested    |
+| Raspberry Pi 1    | Yes               | Not tested    |
+| Raspberry Pi 2    | Yes               | Not tested    |
+| Raspberry Pi 3    | Yes               | Not tested    |
+| Orange Pi         | Not tested        | Yes           |
 
 ## How to contribute
 
-All contributions are welcome. For bug reports, open a new issue. For code patches, open a pull request against the
-`development` branch.
+* for bug reports, open a new issue
+* for code patches, open a pull request against the `development` branch
+* for bugs specific to IPFS, please refer to the [official channel](https://discuss.ipfs.io)
 
