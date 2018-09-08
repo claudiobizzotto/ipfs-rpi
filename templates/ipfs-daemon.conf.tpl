@@ -7,7 +7,7 @@ stop on runlevel [!2345]
 
 script
   echo $$ > /var/run/ipfs-daemon.pid
-  exec su -s /bin/sh -c "/usr/local/bin/ipfs daemon" {{ipfs_user}}
+  exec su -s /bin/sh -c "/usr/local/bin/ipfs daemon --migrate" {{ipfs_user}}
 end script
 
 pre-stop script
