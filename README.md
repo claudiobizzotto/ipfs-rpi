@@ -1,5 +1,4 @@
-IPFS RPi
-========
+# IPFS RPi
 
 A bare bones [IPFS](https://ipfs.io) installer for the Raspberry Pi and other ARM-based devices.
 
@@ -11,10 +10,10 @@ operating systems will default to the `pi` user, whereas on the Orange Pi that's
 From any local directory, clone or download this repo, `cd` into it and run the installer:
 
 ```SHELL
-$ ./install
+./install
 ```
 
-**Notes**
+### Notes
 
 * Do **not** execute the installation script with `sudo`
 * You'll need root privileges to run the installer. The default OS user (`pi`, `orangepi` etc.) does so by default
@@ -25,22 +24,16 @@ $ ./install
 You can specify a version for IPFS (eg.: `v0.4.11`):
 
 ```SHELL
-$ ./install v0.4.11
+./install v0.4.11
 ```
 
 ## IPFS usage
 
 You can find a lot of information on how to use IPFS on the [official website](https://ipfs.io/docs/getting-started/).
-If you just want to test whether the installation was successful or not, you can start by _checking out_ an IPFS object:
+If you just want to test whether the installation was successful or not, you can list your node's peers:
 
 ```SHELL
-$ ipfs cat /ipfs/QmRoyYykmw7XUsifRqkR7v6ezKuqhmvoQuukPGR1aQKRZh
-```
-
-To confirm that your node is connected to the IPFS swarm (aka is online), you can list your node's peers:
-
-```SHELL
-$ ipfs swarm peers
+ipfs swarm peers
 ```
 
 ## IPFS daemon
@@ -52,13 +45,13 @@ operating system's init system directly.
 For `systemd` (Raspbian Stretch, Ubuntu 15.04 and newer, CentOS 7 and newer), you can use:
 
 ```SHELL
-$ sudo systemctl {start|status|stop} ipfs-daemon.service
+sudo systemctl {start|status|stop} ipfs-daemon.service
 ```
 
 For `upstart` (Ubuntu 9.10 to Ubuntu 14.10, Centos 6), you can use:
 
 ```SHELL
-$ sudo service ipfs-daemon {start|status|stop}
+sudo service ipfs-daemon {start|status|stop}
 ```
 
 ## Uninstallation
@@ -66,8 +59,12 @@ $ sudo service ipfs-daemon {start|status|stop}
 In order to uninstall IPFS, just execute the uninstaller and follow the uninstallation steps:
 
 ```SHELL
-$ ./uninstall
+./uninstall
 ```
+
+## Upgrade
+
+If you want to upgrade to a newer version, start by uninstalling IPFS, but make sure you keep the IPFS data directory (`~/.ipfs`). Then, run the installer with the specific version you want to install. Eg.: `./install v0.4.17`.
 
 ## Support matrix
 
@@ -84,4 +81,3 @@ $ ./uninstall
 * for bug reports, open a new issue
 * for code patches, open a pull request against the `development` branch
 * for bugs specific to IPFS, please refer to the [official channel](https://discuss.ipfs.io)
-

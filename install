@@ -28,7 +28,7 @@ ipfs_version=${1-"v0.4.13"}
 echo ">>> Installing IPFS version $ipfs_version"
 
 tar_gz_destination=/tmp/go-ipfs_${ipfs_version}_${ipfs_arch}.tar.gz
-[ ! -f $tar_gz_destination ] && sudo wget "https://dist.ipfs.io/go-ipfs/${ipfs_version}/go-ipfs_${ipfs_version}_${ipfs_arch}.tar.gz" -O $tar_gz_destination
+sudo wget "https://dist.ipfs.io/go-ipfs/${ipfs_version}/go-ipfs_${ipfs_version}_${ipfs_arch}.tar.gz" -O $tar_gz_destination
 
 if [ ! -f $tar_gz_destination ]; then
   echo ">>> Failed to download IPFS"
@@ -47,18 +47,23 @@ sudo chmod 755 $ipfs_destination
 # Install and enable bring-up configurations for IPFS daemon
 init_system=$(get_init_system)
 ipfs_path=$HOME/.ipfs
+ipfs_user=pi
+ipfs_group=pi
 
 if [ $init_system == "systemd" ]; then
-  cat ./templates/ipfs-daemon.service.tpl | sed \
-    "s|{{ipfs_path}}|${ipfs_path}|g" | \
+  cat ./templates/ipfs-daemon.service.tpl | \
+  sed "s|{{ipfs_path}}|${ipfs_path}|g" | \
+  sed "s|{{ipfs_user}}|${ipfs_user}|g" | \
+  sed "s|{{ipfs_group}}|${ipfs_group}|g" | \
   sudo tee /lib/systemd/system/ipfs-daemon.service > /dev/null
 
   sudo systemctl daemon-reload
   sudo systemctl enable ipfs-daemon
   sudo systemctl start ipfs-daemon.service
 elif [ $init_system == "upstart" ]; then
-  cat ./templates/ipfs-daemon.conf.tpl | sed \
-    "s|{{ipfs_path}}|${ipfs_path}|g" | \
+  cat ./templates/ipfs-daemon.conf.tpl | \
+  sed "s|{{ipfs_path}}|${ipfs_path}|g" | \
+  sed "s|{{ipfs_user}}|${ipfs_user}|g" | \
   sudo tee /etc/init/ipfs-daemon.conf > /dev/null
 
   sudo initctl reload-configuration
@@ -68,4 +73,3 @@ else
 fi
 
 echo ">>> All done."
-

@@ -16,4 +16,3 @@ function get_init_system() {
 
   return 0
 }
-

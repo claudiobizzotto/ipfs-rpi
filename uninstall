@@ -31,11 +31,11 @@ if [ $init_system == "systemd" ]; then
       echo ">>> Failed to stop IPFS"
       exit $?
     fi
-
-    sudo systemctl disable ipfs-daemon 2>/dev/null 1>&2
-    sudo rm -f /lib/systemd/system/ipfs-daemon.service
-    sudo systemctl daemon-reload
   fi
+
+  sudo systemctl disable ipfs-daemon 2>/dev/null 1>&2
+  sudo rm -f /lib/systemd/system/ipfs-daemon.service
+  sudo systemctl daemon-reload
 elif [ $init_system == "upstart" ]; then
   sudo service ipfs-daemon status 2>/dev/null 1>&2
 
@@ -47,10 +47,10 @@ elif [ $init_system == "upstart" ]; then
       echo ">>> Failed to stop IPFS"
       exit $?
     fi
-
-    sudo rm -f /etc/init/ipfs-daemon.conf
-    sudo initctl reload-configuration
   fi
+
+  sudo rm -f /etc/init/ipfs-daemon.conf
+  sudo initctl reload-configuration
 fi
 
 sudo rm -rf /usr/local/bin/ipfs
@@ -71,4 +71,3 @@ if [ -d $ipfs_dir ]; then
 fi
 
 echo ">>> All done."
-
