@@ -47,8 +47,8 @@ sudo chmod 755 $ipfs_destination
 # Install and enable bring-up configurations for IPFS daemon
 init_system=$(get_init_system)
 ipfs_path=$HOME/.ipfs
-ipfs_user=pi
-ipfs_group=pi
+ipfs_user=$(whoami)
+ipfs_group=$(whoami)
 
 if [ $init_system == "systemd" ]; then
   cat ./templates/ipfs-daemon.service.tpl | \
