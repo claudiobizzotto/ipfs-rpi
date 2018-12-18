@@ -11,8 +11,7 @@ while getopts ":y" opt; do
 done
 
 if [ -z $assume_yes ]; then
-  read -p "Uninstall IPFS? [Y/n] " proceed
-  [ ! "${proceed,,}" == "y" ] && exit 0
+  ask "Uninstall IPFS?" || exit 0
 fi
 
 echo ">>> Uninstalling IPFS"
@@ -60,8 +59,7 @@ if [ -d $ipfs_dir ]; then
   remove_ipfs_dir=true
 
   if [ -z $assume_yes ]; then
-    read -p "Uninstall IPFS directory ($ipfs_dir)? This will remove all your local IPFS files. [Y/n] " proceed
-    [ ! "${proceed,,}" == "y" ] && remove_ipfs_dir=false
+    ask "Uninstall IPFS directory ($ipfs_dir)? This will remove all your local IPFS files." || remove_ipfs_dir=false
   fi
 
   if [ $remove_ipfs_dir == true ]; then

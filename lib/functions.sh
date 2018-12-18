@@ -16,3 +16,9 @@ function get_init_system() {
 
   return 0
 }
+
+ask() {
+  read -p "$* [y/N] " proceed
+  [ ! "${proceed,,}" == "y" ] && return 1
+  return 0
+}

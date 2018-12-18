@@ -6,8 +6,7 @@ source ./lib/functions.sh
 
 mode="install"
 if [ -x "$(command -v ipfs)" ]; then
-  read -p ">>> IPFS already installed. Should it be updated? [Y/n] " proceed
-  [ "${proceed,,}" == "y" ] || exit 0
+  ask ">>> IPFS already installed. Should it be updated?" || exit 0
   mode="update"
 fi
 
