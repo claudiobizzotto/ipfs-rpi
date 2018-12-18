@@ -64,7 +64,7 @@ In order to uninstall IPFS, just execute the uninstaller and follow the uninstal
 
 ## Upgrade
 
-If you want to upgrade to a newer version, start by uninstalling IPFS, but make sure you keep the IPFS data directory (`~/.ipfs`). Then, run the installer with the specific version you want to install. Eg.: `./install v0.4.17`.
+If you want to upgrade to a newer version, run the installer again.
 
 ## Support matrix
 

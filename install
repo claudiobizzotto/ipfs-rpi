@@ -4,7 +4,12 @@ set -o pipefail
 
 source ./lib/functions.sh
 
-[ -x "$(command -v ipfs)" ] && echo ">>> IPFS already installed. Use the uninstall script to remove it" && exit 0
+mode="install"
+if [ -x "$(command -v ipfs)" ]; then
+  read -p ">>> IPFS already installed. Should it be updated? [Y/n] " proceed
+  [ "${proceed,,}" == "y" ] || exit 0
+  mode="update"
+fi
 
 arm_type="? (unknown ARM system)"
 rpi_revision=`sed -rn 's/Revision\s+\:\s+([0-9a-z_\-\s\,\(\)]+)/\1/p' /proc/cpuinfo`
@@ -62,7 +67,11 @@ if [ $init_system == "systemd" ]; then
   sudo tee /lib/systemd/system/ipfs-daemon.service > /dev/null
 
   sudo systemctl daemon-reload
-  sudo systemctl enable --now ipfs-daemon
+  if [ "$mode" == "install" ]; then
+    sudo systemctl enable --now ipfs-daemon
+  elif [ "$mode" == "update" ]; then
+    sudo systemctl restart ipfs-daemon
+  fi
 elif [ $init_system == "upstart" ]; then
   cat ./templates/ipfs-daemon.conf.tpl | \
   sed "s|{{ipfs_path}}|${ipfs_path}|g" | \
@@ -70,7 +79,12 @@ elif [ $init_system == "upstart" ]; then
   sudo tee /etc/init/ipfs-daemon.conf > /dev/null
 
   sudo initctl reload-configuration
-  sudo service ipfs-daemon start
+  if [ "$mode" == "install" ]; then
+    sudo service ipfs-daemon start
+  elif [ "$mode" == "update" ]; then
+    sudo service ipfs-daemon stop
+    sudo service ipfs-daemon start
+  fi
 else
   echo ">>> Unable to detect init system - you don't seem to be using systemd or upstart. The IPFS daemon will have to be controlled manually."
 fi
