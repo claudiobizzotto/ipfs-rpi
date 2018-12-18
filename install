@@ -23,7 +23,8 @@ echo ">>> Starting installation on ARM device compatible with $arm_type"
 
 # Download and install IPFS
 ipfs_arch=${2-"linux-arm"}
-ipfs_version=${1-"v0.4.13"}
+ipfs_version=$(curl -s https://dist.ipfs.io/go-ipfs/versions | tail -1)
+ipfs_version=${1-$ipfs_version}
 
 echo ">>> Installing IPFS version $ipfs_version"
 
