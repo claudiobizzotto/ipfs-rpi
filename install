@@ -30,7 +30,9 @@ ipfs_version="v${ipfs_version#v}"
 echo ">>> Installing IPFS version $ipfs_version"
 
 tar_gz_destination=/tmp/go-ipfs_${ipfs_version}_${ipfs_arch}.tar.gz
-wget "https://dist.ipfs.io/go-ipfs/${ipfs_version}/go-ipfs_${ipfs_version}_${ipfs_arch}.tar.gz" -O $tar_gz_destination
+wget "https://dist.ipfs.io/go-ipfs/${ipfs_version}/go-ipfs_${ipfs_version}_${ipfs_arch}.tar.gz" \
+  -q --show-progress \
+  -O $tar_gz_destination
 
 if [ ! -f $tar_gz_destination ]; then
   echo ">>> Failed to download IPFS"
@@ -38,8 +40,10 @@ if [ ! -f $tar_gz_destination ]; then
 fi
 
 ipfs_destination=/usr/local/bin/ipfs
-tar xzvf $tar_gz_destination -C /tmp
+tar xzf $tar_gz_destination -C /tmp
 sudo install /tmp/go-ipfs/ipfs $ipfs_destination
+
+echo ">>> Starting IPFS"
 
 # Maybe initialize IPFS
 [ ! -d ~/.ipfs ] && ipfs init
@@ -68,7 +72,7 @@ elif [ $init_system == "upstart" ]; then
   sudo initctl reload-configuration
   sudo service ipfs-daemon start
 else
-  echo ">> Unable to detect init system - you don't seem to be using systemd or upstart. The IPFS daemon will have to be controlled manually."
+  echo ">>> Unable to detect init system - you don't seem to be using systemd or upstart. The IPFS daemon will have to be controlled manually."
 fi
 
 rm $tar_gz_destination
