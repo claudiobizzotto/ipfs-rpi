@@ -4,7 +4,11 @@ set -o pipefail
 
 source ./lib/functions.sh
 
-[ -x "$(command -v ipfs)" ] && echo ">>> IPFS already installed. Use the uninstall script to remove it" && exit 0
+mode="install"
+if [ -x "$(command -v ipfs)" ]; then
+  ask ">>> IPFS already installed. Should it be updated?" || exit 0
+  mode="update"
+fi
 
 arm_type="? (unknown ARM system)"
 rpi_revision=`sed -rn 's/Revision\s+\:\s+([0-9a-z_\-\s\,\(\)]+)/\1/p' /proc/cpuinfo`
@@ -23,12 +27,16 @@ echo ">>> Starting installation on ARM device compatible with $arm_type"
 
 # Download and install IPFS
 ipfs_arch=${2-"linux-arm"}
-ipfs_version=${1-"v0.4.13"}
+ipfs_version=$(curl -s https://dist.ipfs.io/go-ipfs/versions | tail -1)
+ipfs_version=${1-$ipfs_version}
+ipfs_version="v${ipfs_version#v}"
 
 echo ">>> Installing IPFS version $ipfs_version"
 
 tar_gz_destination=/tmp/go-ipfs_${ipfs_version}_${ipfs_arch}.tar.gz
-sudo wget "https://dist.ipfs.io/go-ipfs/${ipfs_version}/go-ipfs_${ipfs_version}_${ipfs_arch}.tar.gz" -O $tar_gz_destination
+wget "https://dist.ipfs.io/go-ipfs/${ipfs_version}/go-ipfs_${ipfs_version}_${ipfs_arch}.tar.gz" \
+  -q --show-progress \
+  -O $tar_gz_destination
 
 if [ ! -f $tar_gz_destination ]; then
   echo ">>> Failed to download IPFS"
@@ -36,10 +44,10 @@ if [ ! -f $tar_gz_destination ]; then
 fi
 
 ipfs_destination=/usr/local/bin/ipfs
-sudo tar xzvf $tar_gz_destination -C /tmp
-sudo cp /tmp/go-ipfs/ipfs $ipfs_destination
-sudo chown root:staff $ipfs_destination
-sudo chmod 755 $ipfs_destination
+tar xzf $tar_gz_destination -C /tmp
+sudo install /tmp/go-ipfs/ipfs $ipfs_destination
+
+echo ">>> Starting IPFS"
 
 # Maybe initialize IPFS
 [ ! -d ~/.ipfs ] && ipfs init
@@ -48,7 +56,7 @@ sudo chmod 755 $ipfs_destination
 init_system=$(get_init_system)
 ipfs_path=$HOME/.ipfs
 ipfs_user=$(whoami)
-ipfs_group=$(whoami)
+ipfs_group=$(id -gn)
 
 if [ $init_system == "systemd" ]; then
   cat ./templates/ipfs-daemon.service.tpl | \
@@ -58,8 +66,11 @@ if [ $init_system == "systemd" ]; then
   sudo tee /lib/systemd/system/ipfs-daemon.service > /dev/null
 
   sudo systemctl daemon-reload
-  sudo systemctl enable ipfs-daemon
-  sudo systemctl start ipfs-daemon.service
+  if [ "$mode" == "install" ]; then
+    sudo systemctl enable --now ipfs-daemon
+  elif [ "$mode" == "update" ]; then
+    sudo systemctl restart ipfs-daemon
+  fi
 elif [ $init_system == "upstart" ]; then
   cat ./templates/ipfs-daemon.conf.tpl | \
   sed "s|{{ipfs_path}}|${ipfs_path}|g" | \
@@ -67,9 +78,16 @@ elif [ $init_system == "upstart" ]; then
   sudo tee /etc/init/ipfs-daemon.conf > /dev/null
 
   sudo initctl reload-configuration
-  sudo service ipfs-daemon start
+  if [ "$mode" == "install" ]; then
+    sudo service ipfs-daemon start
+  elif [ "$mode" == "update" ]; then
+    sudo service ipfs-daemon stop
+    sudo service ipfs-daemon start
+  fi
 else
-  echo ">> Unable to detect init system - you don't seem to be using systemd or upstart. The IPFS daemon will have to be controlled manually."
+  echo ">>> Unable to detect init system - you don't seem to be using systemd or upstart. The IPFS daemon will have to be controlled manually."
 fi
+
+rm $tar_gz_destination
 
 echo ">>> All done."
