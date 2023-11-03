@@ -1,4 +1,6 @@
-# IPFS RPi
+# IPFS RPi (ABANDONED -- DON'T USE)
+
+**IMPORTANT**: IPFS has its own [SystemD files](https://github.com/ipfs/kubo/tree/master/misc/systemd) now. Use them instead. https://github.com/ipfs/kubo/tree/master/misc/systemd
 
 A bare bones [IPFS](https://ipfs.io) installer for the Raspberry Pi and other ARM-based devices.
 
